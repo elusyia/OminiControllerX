@@ -2,20 +2,35 @@ import pygame
 import numpy as np
 import json
 
+SUPPORTED_GAMEPAD = ["Controller (Xbox One For Windows)"]
+
 
 class Gamepad:
     def __init__(self):
+        NO_SUPPORT_GAMEPAD = True
         config = json.load(open("src\config.json", "r"))
+        joystick = None
         pygame.init()
         pygame.joystick.init()
         joystick_count = pygame.joystick.get_count()
         try:
             if joystick_count == 0:
-                print("No gamepads detected.")
+                print("No gamepads detected. Please connect a gamepad to your device.")
             else:
-                self.joystick = pygame.joystick.Joystick(0)
-                self.joystick.init()
-            print("Initialized gamepad:", self.joystick.get_name())
+                # for each gamepad, print out its info
+                for i in range(joystick_count):
+                    joystick = pygame.joystick.Joystick(i)
+                    joystick.init()
+                    print(f"Gamepad{i} detected:")
+                    print("  Name:", joystick.get_name())
+                    print("  ID:", joystick.get_id())
+                    if joystick.get_name() in SUPPORTED_GAMEPAD:
+                        NO_SUPPORT_GAMEPAD = False
+                    joystick.quit()
+                if NO_SUPPORT_GAMEPAD:
+                    print("No supported gamepads detected. Connect to gamepad 0 anyway")
+                    joystick = pygame.joystick.Joystick(0)
+                    joystick.init()
         except Exception as e:
             print(f"Controller not available: {e}")
         self.t = 0
@@ -72,6 +87,16 @@ class Gamepad:
             self.button_state["12"] = False
             self.button_state["13"] = False
         for event in pygame.event.get():
+            if event.type == pygame.JOYDEVICEADDED:
+                if (
+                    pygame.joystick.Joystick(event.device_index).get_name()
+                    in SUPPORTED_GAMEPAD
+                ):  # if gamepad is xbox one controller
+                    self.joystick = pygame.joystick.Joystick(event.device_index)
+                    self.joystick.init()
+                    print("Supported gamepad connected:", self.joystick.get_name())
+            elif event.type == pygame.JOYDEVICEREMOVED:
+                print("Gamepad disconnected.")
             if event.type == pygame.JOYBUTTONDOWN:
                 # print("Button", event.button, "pressed.")
                 pass
