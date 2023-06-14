@@ -198,13 +198,13 @@ if __name__ == "__main__":
                 ):
                     for func in button_func_map[button][0]:
                         if button == "0":
-                            func(config["a_button_parameter"])
+                            func(config["a_button_parameter"], "a")
                         elif button == "1":
-                            func(config["b_button_parameter"])
+                            func(config["b_button_parameter"], "b")
                         elif button == "2":
-                            func(config["x_button_parameter"])
+                            func(config["x_button_parameter"], "x")
                         elif button == "3":
-                            func(config["y_button_parameter"])
+                            func(config["y_button_parameter"], "y")
                         else:
                             func()
                 elif (
@@ -213,13 +213,13 @@ if __name__ == "__main__":
                 ):
                     for func in button_func_map[button][1]:
                         if button == "0":
-                            func(config["a_button_parameter"])
+                            func(config["a_button_parameter"], "a")
                         elif button == "1":
-                            func(config["b_button_parameter"])
+                            func(config["b_button_parameter"], "b")
                         elif button == "2":
-                            func(config["x_button_parameter"])
+                            func(config["x_button_parameter"], "x")
                         elif button == "3":
-                            func(config["y_button_parameter"])
+                            func(config["y_button_parameter"], "y")
                         else:
                             func()
         pygame.time.wait(1000 // TARGET_FPS - 1)

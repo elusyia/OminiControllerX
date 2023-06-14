@@ -25,6 +25,7 @@ class Drone(Gamepad):
     def __init__(self):
         super().__init__()
         self.ENABLE = False
+        self.MODE = config["mode"] # "fpv" or "drone"
         self.ALT_MOVE_MODE = False
         self.ALT_CONTROL_LAYER = False
         # self.CRUISE_COUNTROL = False
@@ -113,14 +114,21 @@ class Drone(Gamepad):
 
     def __calc_position(self):
         self.pre_pos[self.current_pos] = self.pos[self.current_pos]
-        rotation_matrix = R.from_euler(
-            "xyz", self.rot[self.current_pos]
-        ).as_matrix()  # calculate rotation matrix
+        if self.MODE == "fpv":
+            rotation_matrix = R.from_euler(
+                "xyz", self.rot[self.current_pos]
+            ).as_matrix()  # calculate rotation matrix
+        elif self.MODE == "drone":
+            rotation_matrix = R.from_euler(
+                "xyz", self.rot[self.current_pos]*np.array([0, 1, 0])
+            ).as_matrix()
+        else:
+            raise ValueError("Invalid mode")
         pos_diff = np.transpose(
             np.matmul(rotation_matrix, np.transpose(self.pos_diff))
         )  # 对位移误差进行左乘旋转矩阵,得到当前旋转下的位移在原空间中的数值
         self.pos[self.current_pos] = self.pos[self.current_pos] + np.multiply(pos_diff, NORMAL_SPEED_FILTER)
-
+        
     # TODO: 待修改
     def __calc_rotation(self):
         self.pre_rot[self.current_pos] = self.rot[self.current_pos]

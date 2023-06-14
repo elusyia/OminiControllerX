@@ -1,15 +1,13 @@
 import pygame
-import numpy as np
 import json
 
 SUPPORTED_GAMEPAD = ["Controller (Xbox One For Windows)"]
-
+config = json.load(open("src/config.json", "r"))
 
 class Gamepad:
     def __init__(self):
         NO_SUPPORT_GAMEPAD = True
-        config = json.load(open("src\config.json", "r"))
-        joystick = None
+        self.joystick = None
         pygame.init()
         pygame.joystick.init()
         joystick_count = pygame.joystick.get_count()
@@ -19,18 +17,18 @@ class Gamepad:
             else:
                 # for each gamepad, print out its info
                 for i in range(joystick_count):
-                    joystick = pygame.joystick.Joystick(i)
-                    joystick.init()
+                    self.joystick = pygame.joystick.Joystick(i)
+                    self.joystick.init()
                     print(f"Gamepad{i} detected:")
-                    print("  Name:", joystick.get_name())
-                    print("  ID:", joystick.get_id())
-                    if joystick.get_name() in SUPPORTED_GAMEPAD:
+                    print("  Name:", self.joystick.get_name())
+                    print("  ID:", self.joystick.get_id())
+                    if self.joystick.get_name() in SUPPORTED_GAMEPAD:
                         NO_SUPPORT_GAMEPAD = False
-                    joystick.quit()
+                    self.joystick.quit()
                 if NO_SUPPORT_GAMEPAD:
                     print("No supported gamepads detected. Connect to gamepad 0 anyway")
-                    joystick = pygame.joystick.Joystick(0)
-                    joystick.init()
+                    self.joystick = pygame.joystick.Joystick(0)
+                    self.joystick.init()
         except Exception as e:
             print(f"Controller not available: {e}")
         self.t = 0
