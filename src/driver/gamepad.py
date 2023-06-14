@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-import time
+
 
 class Gamepad:
     def __init__(self):
@@ -16,10 +16,6 @@ class Gamepad:
             print("Initialized gamepad:", self.joystick.get_name())
         except Exception as e:
             print(f"Controller not available: {e}")
-        self.pos_diff = np.array([0, 0, 0])
-        self.rot_diff = np.array([0, 0, 0])
-        self.pre_pos_diff = np.array([0, 0, 0])
-        self.pre_rot_diff = np.array([0, 0, 0])
         self.t = 0
         self.button_state = {
             "0": False,  # A
@@ -44,8 +40,8 @@ class Gamepad:
             "3": 0,  # Y
             "4": 2,  # LB
             "5": 2,  # RB
-            "6": 1,  # back
-            "7": 1,  # start
+            "6": 0,  # back
+            "7": 0,  # start
             "8": 0,  # left stick
             "9": 0,  # right stick
             # "10": 0,  # joyhat up
@@ -54,10 +50,7 @@ class Gamepad:
             # "13": 0,  # joyhat right
         }
 
-    def __repr__(self):
-        return "Position Differential: "+ str(self.pos_diff)+ "Rotation Differential: " + str(self.rot_diff) + "Button: " + str(self.button_state) + "Time: " + str(self.t)
-
-    def __zero_drift(self, value):
+    def fix_zero_drift(self, value):
         if abs(value) < 0.08:
             return 0
         else:
@@ -71,10 +64,11 @@ class Gamepad:
             ):  # if button type is key then set state to False every time
                 self.button_state[button] = False
         # for joyhat, set state to False every time
-        self.button_state["10"] = False
-        self.button_state["11"] = False
-        self.button_state["12"] = False
-        self.button_state["13"] = False
+        if not self.button_state["4"]:
+            self.button_state["10"] = False
+            self.button_state["11"] = False
+            self.button_state["12"] = False
+            self.button_state["13"] = False
         for event in pygame.event.get():
             if event.type == pygame.JOYBUTTONDOWN:
                 # print("Button", event.button, "pressed.")
@@ -102,32 +96,19 @@ class Gamepad:
             elif event.type == pygame.JOYHATMOTION:
                 # print("Joystick hat", event.hat, "moved to", event.value)
                 pass
-                if event.value == (0, 1): # joyhat up
+                if event.value == (0, 1):  # joyhat up
                     self.button_state["10"] = True
-                elif event.value == (0, -1): # joyhat down
+                elif event.value == (0, -1):  # joyhat down
                     self.button_state["11"] = True
-                elif event.value == (-1, 0): # joyhat left
+                elif event.value == (-1, 0):  # joyhat left
                     self.button_state["12"] = True
-                elif event.value == (1, 0): # joyhat right
+                elif event.value == (1, 0):  # joyhat right
                     self.button_state["13"] = True
-                
-        self.t = time.perf_counter()
-        self.pre_pos_diff = self.pos_diff
-        self.pre_rot_diff = self.rot_diff
-        self.pos_diff = np.array(
-            [
-                self.__zero_drift(-self.joystick.get_axis(0)),
-                (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
-                self.__zero_drift(-self.joystick.get_axis(1)),
-            ]
-        )
-        self.rot_diff = np.array(
-            [
-                self.__zero_drift(self.joystick.get_axis(3)),
-                self.__zero_drift(-self.joystick.get_axis(2)),
-                0,
-            ]
-        )
+                else:
+                    self.button_state["10"] = False
+                    self.button_state["11"] = False
+                    self.button_state["12"] = False
+                    self.button_state["13"] = False
 
 
 if __name__ == "__main__":

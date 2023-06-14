@@ -81,16 +81,35 @@ if __name__ == "__main__":
         "1": [[], []],  # B
         "2": [[], []],  # X
         "3": [[], []],  # Y
-        "4": [[drone.start_zoom_aperture_tunner], [drone.stop_zoom_aperture_tunner]],  # LB
-        "5": [[drone.staet_slow_mode], [drone.stop_slow_mode]],  # RB
-        "6": [[], []],  # back
-        "7": [[], []],  # start
+        "4": [[drone.start_alt_control], [drone.stop_alt_control]],  # LB
+        "5": [[drone.staet_alt_move_mode], [drone.stop_alt_move_mode]],  # RB
+        "6": [[vrcl.toggle_hud], []],  # back
+        "7": [[vrcl.toggle_direct_cast], []],  # start
         "8": [[drone.clear_pos_rot, omini.reset], []],  # left stick
         "9": [[], []],  # right stick
         "10": [[vrcl.toggle_portrait], []],  # joyhat up
-        "11": [[drone.clear_pos_rot, omini.reset, omini.change_target], []],  # joyhat down
-        "12": [[vrcl.toggle_avatar_focus], []],  # joyhat left
-        "13": [[vrcl.toggle_hud], []],  # joyhat right
+        "11": [
+            [drone.clear_pos_rot, omini.reset, omini.change_target],
+            [],
+        ],  # joyhat down
+        "12": [[], []],  # joyhat left
+        "13": [[], []],  # joyhat right
+    }
+    button_alt_func_map = {
+        "0": [[], []],  # A
+        "1": [[], []],  # B
+        "2": [[], []],  # X
+        "3": [[], []],  # Y
+        "4": [[drone.start_alt_control], [drone.stop_alt_control]],  # LB
+        "5": [[], []],  # RB
+        "6": [[vrcl.toggle_focus_peak], []],  # back
+        "7": [[vrcl.toggle_avatar_focus], []],  # start
+        "8": [[drone.clear_pos_rot, omini.reset], []],  # left stick
+        "9": [[], []],  # right stick
+        "10": [[], []],  # joyhat up
+        "11": [[], []],  # joyhat down
+        "12": [[], []],  # joyhat left
+        "13": [[], []],  # joyhat right
     }
 
     """ Init
@@ -98,8 +117,9 @@ if __name__ == "__main__":
     omini.sync_state(drone.pos, drone.rot)
     omini.reset()
     vrcl.sync_aperture(drone.aperture)
-    vrcl.sync_focus(drone.focus, drone.AF)
+    vrcl.sync_focus(drone.focus)
     vrcl.sync_zoom(drone.zoom)
+    vrcl.sync_exposure(drone.exposure)
 
     while True:
         """Long hold L1+R1 to toggle start/stop system"""
@@ -120,8 +140,9 @@ if __name__ == "__main__":
                         omini.reset()
                         drone.stop()
                         vrcl.sync_aperture(drone.aperture)
-                        vrcl.sync_focus(drone.focus, drone.AF)
+                        vrcl.sync_focus(drone.focus)
                         vrcl.sync_zoom(drone.zoom)
+                        vrcl.sync_exposure(drone.exposure)
                     else:
                         drone.reset()
                         omini.sync_state(drone.pos, drone.rot)
@@ -145,19 +166,38 @@ if __name__ == "__main__":
         if drone.is_started():
             omini.sync_state(drone.pos, drone.rot)
             vrcl.sync_aperture(drone.aperture)
-            vrcl.sync_focus(drone.focus, drone.AF)
+            vrcl.sync_focus(drone.focus)
             vrcl.sync_zoom(drone.zoom)
+            vrcl.sync_exposure(drone.exposure)
 
         """ Key Event
         """
-        for button in drone.button_state:
-            if drone.button_state[button] and button_func_map[button][0].__len__() > 0:
-                for func in button_func_map[button][0]:
-                    func()
-            elif (
-                not drone.button_state[button]
-                and button_func_map[button][1].__len__() > 0
-            ):
-                for func in button_func_map[button][1]:
-                    func()
+        if drone.button_state["4"]:
+            for button in drone.button_state:
+                if (
+                    drone.button_state[button]
+                    and button_alt_func_map[button][0].__len__() > 0
+                ):
+                    for func in button_alt_func_map[button][0]:
+                        func()
+                elif (
+                    not drone.button_state[button]
+                    and button_alt_func_map[button][1].__len__() > 0
+                ):
+                    for func in button_alt_func_map[button][1]:
+                        func()
+        else:
+            for button in drone.button_state:
+                if (
+                    drone.button_state[button]
+                    and button_func_map[button][0].__len__() > 0
+                ):
+                    for func in button_func_map[button][0]:
+                        func()
+                elif (
+                    not drone.button_state[button]
+                    and button_func_map[button][1].__len__() > 0
+                ):
+                    for func in button_func_map[button][1]:
+                        func()
         pygame.time.wait(1000 // TARGET_FPS - 1)

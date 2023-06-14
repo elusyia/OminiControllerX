@@ -2,50 +2,48 @@ from driver.gamepad import Gamepad
 import pygame
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+import json
+import time
 
-NORMAL_SPEED_FILTER = np.array([0.05, 0.05, 0.05])
-NORMAL_ROT_FILTER = np.array([0.02, 0.02, 0.02])
-SLOW_SPEED_FILTER = np.array([0.3, 0.3, 0.3])
-ZOOM_SPEED = 0.005
-EXPOSURE_SPEED = 0.01
-APERTURE_SPEED = 0.002
-FOCUS_SPEED = 0.01
+config = json.load(open("src\config.json", "r"))
+
+NORMAL_SPEED_FILTER = np.array([0.05, 0.05, 0.05]) * config["normal_mov_speed"]
+NORMAL_ROT_FILTER = np.array([0.02, 0.02, 0.02]) * config["normal_rot_speed"]
+ALT_SPEED_FILTER = np.array([1, 1, 1]) * config["alt_mov_speed"]
+ALT_ROT_FILTER = np.array([1, 1, 1]) * config["alt_rot_speed"]
+ZOOM_SPEED = 0.005 * config["zoom_speed"]
+EXPOSURE_SPEED = 0.003 * config["exposure_speed"]
+APERTURE_SPEED = 0.002 * config["aperture_speed"]
+FOCUS_SPEED = 0.002 * config["focus_speed"]
+
 
 def constrain(x: float, min_value: float = 0, max_value: float = 1) -> float:
     return max(min_value, min(max_value, x))
+
 
 class Drone(Gamepad):
     def __init__(self):
         super().__init__()
         self.ENABLE = False
-        self.SLOWMODE = False
-        self.AF = True
-        self.ZOOM_APERTURE_TUNNER = False
+        self.ALT_MOVE_MODE = False
+        self.ALT_CONTROL_LAYER = False
+        self.POS_LIMIT = 4
         # self.CRUISE_COUNTROL = False
-        # self.cruise_pos_diff = np.array([0, 0, 0])
-        # self.cruise_rot_diff = np.array([0, 0, 0])
-        # self.variable_list = []
-        self.pre_pos = np.array([0, 0, 0])
-        self.pre_rot = np.array([0, 0, 0])
-        self.pos = np.array([0, 0, 0])  # in meter
-        self.rot = np.array([0, 0, 0])  # in rad
+        # self.cruise_pos_diff = np.zeros(3)
+        # self.cruise_rot_diff = np.zeros(3)
+        self.pos_diff = np.zeros(3)
+        self.rot_diff = np.zeros(3)
+        self.pre_pos_diff = np.zeros(3)
+        self.pre_rot_diff = np.zeros(3)
+        self.pre_pos = np.zeros(3)
+        self.pre_rot = np.zeros(3)
+        self.pos = np.zeros(3)  # in meter
+        self.rot = np.zeros(3)  # in rad
         # lens parameters
         self.zoom = 0.3
         self.exposure = 0.5
         self.aperture = 0.17
         self.focus = 0.0
-        # filter list that storage filter function handle
-        # self.pre_pos_filter_list = []
-        # self.pre_rot_filter_list = []
-        # self.after_pos_filter_list = []
-        # self.after_rot_filter_list = []
-        # self.button_func_list = []
-        # for i in range(len(self.event_dict)):
-        #     self.pre_pos_filter_list.append([])
-        #     self.pre_rot_filter_list.append([])
-        #     self.after_pos_filter_list.append([])
-        #     self.after_rot_filter_list.append([])
-        #     self.button_func_list.append([])
 
     def __repr__(self):
         return (
@@ -60,6 +58,7 @@ class Drone(Gamepad):
             + "Time: "
             + str(self.t)
         )
+    
 
     def start(self):
         self.ENABLE = True
@@ -77,20 +76,23 @@ class Drone(Gamepad):
     def is_started(self):
         return self.ENABLE
 
-    def staet_slow_mode(self):
-        self.SLOWMODE = True
+    def staet_alt_move_mode(self):
+        self.ALT_MOVE_MODE = True
 
-    def stop_slow_mode(self):
-        self.SLOWMODE = False
+    def stop_alt_move_mode(self):
+        self.ALT_MOVE_MODE = False
 
-    def is_slow_mode(self):
-        return self.SLOWMODE
+    def is_alt_move_mode(self):
+        return self.ALT_MOVE_MODE
 
-    def start_zoom_aperture_tunner(self):
-        self.ZOOM_APERTURE_TUNNER = True
+    def start_alt_control(self):
+        self.ALT_CONTROL_LAYER = True
 
-    def stop_zoom_aperture_tunner(self):
-        self.ZOOM_APERTURE_TUNNER = False
+    def stop_alt_control(self):
+        self.ALT_CONTROL_LAYER = False
+
+    def is_alt_control(self):
+        return self.ALT_CONTROL_LAYER
 
     # def start_cruise_control(self):
     #     self.CRUISE_COUNTROL = True
@@ -125,23 +127,22 @@ class Drone(Gamepad):
         self.rot = np.mod(self.rot, 2 * np.pi)  # get dicimal part
 
     def reset(self):
-        self.pre_pos = np.array([0, 0, 0])
-        self.pre_rot = np.array([0, 0, 0])
-        self.pos = np.array([0, 0, 0])  # in meter
-        self.rot = np.array([0, 0, 0])  # in rad
+        self.pre_pos = np.zeros(3)
+        self.pre_rot = np.zeros(3)
+        self.pos = np.zeros(3)  # in meter
+        self.rot = np.zeros(3)  # in rad
         self.zoom = 0.3
         self.exposure = 0.5
         self.aperture = 0.17
         self.focus = 0.0
-        self.AF = True
 
     def clear_pos(self):
-        self.pre_pos = np.array([0, 0, 0])
-        self.pos = np.array([0, 0, 0])
+        self.pre_pos = np.zeros(3)
+        self.pos = np.zeros(3)
 
     def clear_rot(self):
-        self.pre_rot = np.array([0, 0, 0])
-        self.rot = np.array([0, 0, 0])
+        self.pre_rot = np.zeros(3)
+        self.rot = np.zeros(3)
 
     def clear_pos_rot(self):
         self.clear_pos()
@@ -149,26 +150,72 @@ class Drone(Gamepad):
 
     def update(self):
         super().update()
+
+
         if self.ENABLE:  # if is True, stop process
+            self.t = time.perf_counter()
+            self.pre_pos_diff = self.pos_diff
+            self.pre_rot_diff = self.rot_diff
+            self.pos_diff = np.array(
+                [
+                    self.fix_zero_drift(-self.joystick.get_axis(0)),
+                    (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
+                    self.fix_zero_drift(-self.joystick.get_axis(1)),
+                ]
+            )
+            self.rot_diff = np.array(
+                [
+                    self.fix_zero_drift(self.joystick.get_axis(3)),
+                    self.fix_zero_drift(-self.joystick.get_axis(2)),
+                    (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
+                ]
+            )
 
-            if self.SLOWMODE:  # if left stick is pressed, enable fast mode
-                self.pos_diff = np.multiply(self.pos_diff, SLOW_SPEED_FILTER)
 
-            self.__calc_position()  # update position
-            if (
-                not self.ZOOM_APERTURE_TUNNER
-            ):  # stop update rotation when variable tunner is on
-                self.__calc_rotation()  # update rotation
-            else:
-                self.joystick.rumble(abs(self.rot_diff[0])/20, abs(self.rot_diff[0])/20, 1)
+            if self.ALT_MOVE_MODE:  # if alternative move mode
+                self.pos_diff = np.multiply(self.pos_diff, ALT_SPEED_FILTER)
+                self.rot_diff = np.multiply(self.rot_diff, ALT_ROT_FILTER)
+
+
+            if self.ALT_CONTROL_LAYER:
+                self.pos_diff *= np.array([1, 0, 1])
+                self.rot_diff *= np.array([0, 0, 1])
+                self.__calc_position()  # update position not update rotation
+                self.__calc_rotation()  # update rotation not update position
                 # calc zoom
-                self.zoom = self.zoom - self.rot_diff[0] * ZOOM_SPEED
+                self.joystick.rumble(
+                    abs(self.joystick.get_axis(3)) / 20, abs(self.joystick.get_axis(3)) / 20, 1
+                )
+                self.zoom = self.zoom - self.fix_zero_drift(self.joystick.get_axis(3)) * ZOOM_SPEED
                 self.zoom = constrain(self.zoom)
                 # calc aperture
-                self.aperture = self.aperture - self.rot_diff[1] * APERTURE_SPEED
+                self.aperture = self.aperture - self.fix_zero_drift(-self.joystick.get_axis(2)) * APERTURE_SPEED
                 self.aperture = constrain(self.aperture)
+                # calc exposure
+                if self.button_state["12"]:
+                    self.joystick.rumble(0.1, 0.1, 1)
+                    self.exposure = self.exposure - EXPOSURE_SPEED
+                    self.exposure = constrain(self.exposure)
+                if self.button_state["13"]:
+                    self.joystick.rumble(0.1, 0.1, 1)
+                    self.exposure = self.exposure + EXPOSURE_SPEED
+                    self.exposure = constrain(self.exposure)
+                # calc focus
+                if self.button_state["10"]:
+                    self.joystick.rumble(0.1, 0.1, 1)
+                    self.focus = self.focus + FOCUS_SPEED
+                    self.focus = constrain(self.focus, 0.0, 0.99)
+                if self.button_state["11"]:
+                    self.joystick.rumble(0.1, 0.1, 1)
+                    self.focus = self.focus - FOCUS_SPEED
+                    self.focus = constrain(self.focus, 0.0, 0.99)
 
 
+            else:
+                self.pos_diff *= np.array([1, 1, 1])
+                self.rot_diff *= np.array([1, 1, 0])
+                self.__calc_position()  # update position
+                self.__calc_rotation()  # update rotation
 
 
 if __name__ == "__main__":

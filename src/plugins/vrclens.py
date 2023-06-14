@@ -40,6 +40,10 @@ class VRCLens:
         self.__feature(51)
         print("vrclens: toggled focus peak\n")
 
+    def toggle_direct_cast(self):
+        self.__feature(224)
+        print("vrclens: toggled direct cast\n")
+
     def toggle_portrait(self):
         self.__feature(222)
         print("vrclens: toggled portrait\n")
@@ -69,8 +73,8 @@ class VRCLens:
         )
         # print("vrclens: aperture", value, "\n")
 
-    def sync_focus(self, value: float, AF: bool):
-        if AF:
+    def sync_focus(self, value: float):
+        if value == 0:
             self.osc_client.send_message("/avatar/parameters/VRCLFocusRadial", False)
             # print("vrclens: autofocus")
         else:
