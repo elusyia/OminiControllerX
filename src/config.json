@@ -1,6 +1,6 @@
 {
   "osc_adress": "127.0.0.1",
-  "osc_port": "9000",
+  "osc_port": 9000,
   "normal_mov_speed": 1,
   "alt_mov_speed": 0.3,
   "normal_rot_speed": 1,

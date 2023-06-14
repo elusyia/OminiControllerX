@@ -1,9 +1,11 @@
 from drone import Drone
 from plugins.vrclens import VRCLens
 from plugins.omini_controller import OminiController
+from plugins.user_avatar import Avatar
 from pythonosc import udp_client
 import time
 import pygame
+import json
 
 
 """ 可调整的变量
@@ -11,8 +13,9 @@ import pygame
 # SYSTEM_EVALUATION_CYCLE_TIME = 0.05  # The loop time of the whole system, do not change it unless you know what you are doing. It will also effect the sample speed of the system, which will make the camera move faster or slower.
 # RECORD_VOLUME = 10000
 # RECORDING = False
-OSC_ADRESS = "127.0.0.1"
-OSC_PORT = 9000
+config = json.load(open("src/config.json", "r"))
+OSC_ADRESS = config["osc_adress"]
+OSC_PORT = config["osc_port"]
 TARGET_FPS = 60
 
 """ 录制
@@ -73,14 +76,15 @@ if __name__ == "__main__":
     drone = Drone()
     omini = OminiController(osc_client)
     vrcl = VRCLens(osc_client)
+    avatar = Avatar(osc_client)
 
     """Button functions register map
     """
     button_func_map = {
-        "0": [[], []],  # A
-        "1": [[], []],  # B
-        "2": [[], []],  # X
-        "3": [[], []],  # Y
+        "0": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # A
+        "1": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # B
+        "2": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # X
+        "3": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # Y
         "4": [[drone.start_alt_control], [drone.stop_alt_control]],  # LB
         "5": [[drone.staet_alt_move_mode], [drone.stop_alt_move_mode]],  # RB
         "6": [[vrcl.toggle_hud], []],  # back
@@ -193,11 +197,29 @@ if __name__ == "__main__":
                     and button_func_map[button][0].__len__() > 0
                 ):
                     for func in button_func_map[button][0]:
-                        func()
+                        if button == "0":
+                            func(config["a_button_parameter"])
+                        elif button == "1":
+                            func(config["b_button_parameter"])
+                        elif button == "2":
+                            func(config["x_button_parameter"])
+                        elif button == "3":
+                            func(config["y_button_parameter"])
+                        else:
+                            func()
                 elif (
                     not drone.button_state[button]
                     and button_func_map[button][1].__len__() > 0
                 ):
                     for func in button_func_map[button][1]:
-                        func()
+                        if button == "0":
+                            func(config["a_button_parameter"])
+                        elif button == "1":
+                            func(config["b_button_parameter"])
+                        elif button == "2":
+                            func(config["x_button_parameter"])
+                        elif button == "3":
+                            func(config["y_button_parameter"])
+                        else:
+                            func()
         pygame.time.wait(1000 // TARGET_FPS - 1)

@@ -1,9 +1,11 @@
 import pygame
 import numpy as np
+import json
 
 
 class Gamepad:
     def __init__(self):
+        config = json.load(open("src\config.json", "r"))
         pygame.init()
         pygame.joystick.init()
         joystick_count = pygame.joystick.get_count()
@@ -34,10 +36,10 @@ class Gamepad:
             "13": False,  # joyhat right
         }
         self.button_type = {  # 0: key, 1: toggle, 2: push to activate
-            "0": 0,  # A
-            "1": 0,  # B
-            "2": 0,  # X
-            "3": 0,  # Y
+            "0": config["a_button_type"],  # A
+            "1": config["b_button_type"],  # B
+            "2": config["x_button_type"],  # X
+            "3": config["y_button_type"],  # Y
             "4": 2,  # LB
             "5": 2,  # RB
             "6": 0,  # back
