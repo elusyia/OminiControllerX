@@ -27,7 +27,6 @@ class Drone(Gamepad):
         self.ENABLE = False
         self.ALT_MOVE_MODE = False
         self.ALT_CONTROL_LAYER = False
-        self.POS_LIMIT = 4
         # self.CRUISE_COUNTROL = False
         # self.cruise_pos_diff = np.zeros(3)
         # self.cruise_rot_diff = np.zeros(3)
@@ -35,10 +34,15 @@ class Drone(Gamepad):
         self.rot_diff = np.zeros(3)
         self.pre_pos_diff = np.zeros(3)
         self.pre_rot_diff = np.zeros(3)
-        self.pre_pos = np.zeros(3)
-        self.pre_rot = np.zeros(3)
-        self.pos = np.zeros(3)  # in meter
-        self.rot = np.zeros(3)  # in rad
+        # self.pos = np.zeros(3)  # in meter
+        # self.rot = np.zeros(3)  # in rad
+        self.current_pos = 0
+        self.pos = np.array([np.zeros(3), np.zeros(3), np.zeros(3), np.zeros(3)])  # 4 positions
+        self.rot = np.array([np.zeros(3), np.zeros(3), np.zeros(3), np.zeros(3)])  # 4 rotations
+        # self.pre_pos = np.zeros(3)
+        # self.pre_rot = np.zeros(3)
+        self.pre_pos = np.array([np.zeros(3), np.zeros(3), np.zeros(3), np.zeros(3)])  # 4 positions
+        self.pre_rot = np.array([np.zeros(3), np.zeros(3), np.zeros(3), np.zeros(3)])  # 4 rotations
         # lens parameters
         self.zoom = 0.3
         self.exposure = 0.5
@@ -58,7 +62,6 @@ class Drone(Gamepad):
             + "Time: "
             + str(self.t)
         )
-    
 
     def start(self):
         self.ENABLE = True
@@ -109,40 +112,49 @@ class Drone(Gamepad):
     #         self.cruise_rot_diff = np.array([self.raw.pitch, -self.raw.yaw, self.raw.roll])
 
     def __calc_position(self):
-        self.pre_pos = self.pos
+        self.pre_pos[self.current_pos] = self.pos[self.current_pos]
         rotation_matrix = R.from_euler(
-            "xyz", self.rot
+            "xyz", self.rot[self.current_pos]
         ).as_matrix()  # calculate rotation matrix
         pos_diff = np.transpose(
             np.matmul(rotation_matrix, np.transpose(self.pos_diff))
         )  # 对位移误差进行左乘旋转矩阵,得到当前旋转下的位移在原空间中的数值
-        self.pos = self.pos + np.multiply(pos_diff, NORMAL_SPEED_FILTER)
+        self.pos[self.current_pos] = self.pos[self.current_pos] + np.multiply(pos_diff, NORMAL_SPEED_FILTER)
 
     # TODO: 待修改
     def __calc_rotation(self):
-        self.pre_rot = self.rot
-        self.rot = self.rot + np.multiply(
+        self.pre_rot[self.current_pos] = self.rot[self.current_pos]
+        self.rot[self.current_pos] = self.rot[self.current_pos] + np.multiply(
             self.rot_diff, NORMAL_ROT_FILTER
         )  # rot alone y-x-z
-        self.rot = np.mod(self.rot, 2 * np.pi)  # get dicimal part
+        self.rot[self.current_pos] = np.mod(self.rot[self.current_pos], 2 * np.pi)  # get dicimal part
 
     def reset(self):
-        self.pre_pos = np.zeros(3)
-        self.pre_rot = np.zeros(3)
-        self.pos = np.zeros(3)  # in meter
-        self.rot = np.zeros(3)  # in rad
+        self.clear_pos_rot()
         self.zoom = 0.3
         self.exposure = 0.5
         self.aperture = 0.17
         self.focus = 0.0
 
+    def change_to_pos_0(self):
+        self.current_pos = 0
+
+    def change_to_pos_1(self):
+        self.current_pos = 1
+
+    def change_to_pos_2(self):
+        self.current_pos = 2
+
+    def change_to_pos_3(self):
+        self.current_pos = 3
+
     def clear_pos(self):
-        self.pre_pos = np.zeros(3)
-        self.pos = np.zeros(3)
+        self.pos[self.current_pos] = np.zeros(3)
+        self.pre_pos[self.current_pos] = np.zeros(3)
 
     def clear_rot(self):
-        self.pre_rot = np.zeros(3)
-        self.rot = np.zeros(3)
+        self.rot[self.current_pos] = np.zeros(3)
+        self.pre_rot[self.current_pos] = np.zeros(3)
 
     def clear_pos_rot(self):
         self.clear_pos()

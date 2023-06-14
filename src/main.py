@@ -96,10 +96,10 @@ if __name__ == "__main__":
         "13": [[], []],  # joyhat right
     }
     button_alt_func_map = {
-        "0": [[], []],  # A
-        "1": [[], []],  # B
-        "2": [[], []],  # X
-        "3": [[], []],  # Y
+        "0": [[drone.change_to_pos_0], []],  # A
+        "1": [[drone.change_to_pos_1], []],  # B
+        "2": [[drone.change_to_pos_2], []],  # X
+        "3": [[drone.change_to_pos_3], []],  # Y
         "4": [[drone.start_alt_control], [drone.stop_alt_control]],  # LB
         "5": [[], []],  # RB
         "6": [[vrcl.toggle_focus_peak], []],  # back
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     """ Init
     """
-    omini.sync_state(drone.pos, drone.rot)
+    omini.sync_state(drone.pos[drone.current_pos], drone.rot[drone.current_pos])
     omini.reset()
     vrcl.sync_aperture(drone.aperture)
     vrcl.sync_focus(drone.focus)
@@ -135,7 +135,7 @@ if __name__ == "__main__":
                         drone.joystick.rumble(0.4, 0.4, 800)
                         pygame.time.wait(800)
                         drone.joystick.rumble(0, 0, 0)
-                        omini.sync_state(drone.pos, drone.rot)
+                        omini.sync_state(drone.pos[drone.current_pos], drone.rot[drone.current_pos])
                         drone.reset()
                         omini.reset()
                         drone.stop()
@@ -145,7 +145,7 @@ if __name__ == "__main__":
                         vrcl.sync_exposure(drone.exposure)
                     else:
                         drone.reset()
-                        omini.sync_state(drone.pos, drone.rot)
+                        omini.sync_state(drone.pos[drone.current_pos], drone.rot[drone.current_pos])
                         omini.reset()
                         """Start Anima Here"""
                         vrcl.start()
@@ -164,7 +164,7 @@ if __name__ == "__main__":
         drone.update()
         # print(drone, end="\r")
         if drone.is_started():
-            omini.sync_state(drone.pos, drone.rot)
+            omini.sync_state(drone.pos[drone.current_pos], drone.rot[drone.current_pos])
             vrcl.sync_aperture(drone.aperture)
             vrcl.sync_focus(drone.focus)
             vrcl.sync_zoom(drone.zoom)
