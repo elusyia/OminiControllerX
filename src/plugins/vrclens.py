@@ -1,7 +1,7 @@
 import time
 from pythonosc import udp_client
 
-def constrain(x: float, min_value: float = 0, max_value: float = 1) -> float:
+def constrain(x: float, min_value: float = 0.01, max_value: float = 0.99) -> float:
     return max(min_value, min(max_value, x))
 
 class VRCLens:
