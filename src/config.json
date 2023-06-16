@@ -1,7 +1,8 @@
 {
   "osc_adress": "127.0.0.1",
   "osc_port": 9000,
-  "mode": "drone",
+  "fly_mode": "drone",
+  "control_mode": "game",
   "fps": 60,
   "normal_mov_speed": 1,
   "normal_rot_speed": 1,

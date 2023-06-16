@@ -28,7 +28,8 @@ class Drone(Gamepad):
     def __init__(self):
         super().__init__()
         self.ENABLE = False
-        self.MODE = config["mode"]  # "fpv" or "drone"
+        self.FLY_MODE = config["fly_mode"]  # "fpv" or "drone"
+        self.CONTROL_MODE = config["control_mode"]  # "game" or "japan" or "american" or "china"
         self.LB_CONTROL_LAYER = False
         self.RB_CONTROL_LAYER = False
         # self.ALT_MOVE_MODE = False
@@ -109,14 +110,78 @@ class Drone(Gamepad):
 
     def is_alt_control(self):
         return self.LB_CONTROL_LAYER and self.RB_CONTROL_LAYER
+    
+    def __map_stick_data(self, control_mode:str):
+        if control_mode == "japan":
+            self.pos_diff = np.array(
+                [
+                    self.fix_zero_drift(-self.joystick.get_axis(2)),
+                    self.fix_zero_drift(-self.joystick.get_axis(3)),
+                    self.fix_zero_drift(-self.joystick.get_axis(1)),
+                ]
+            )
+            self.rot_diff = np.array(
+                [
+                    (self.joystick.get_axis(4) - self.joystick.get_axis(5)) / 2,
+                    self.fix_zero_drift(-self.joystick.get_axis(0)),
+                    (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
+                ]
+            )
+        elif control_mode == "american":
+            self.pos_diff = np.array(
+                [
+                    self.fix_zero_drift(-self.joystick.get_axis(2)),
+                    self.fix_zero_drift(-self.joystick.get_axis(1)),
+                    self.fix_zero_drift(-self.joystick.get_axis(3)),
+                ]
+            )
+            self.rot_diff = np.array(
+                [
+                    (self.joystick.get_axis(4) - self.joystick.get_axis(5)) / 2,
+                    self.fix_zero_drift(-self.joystick.get_axis(0)),
+                    (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
+                ]
+            )
+        elif control_mode == "china":
+            self.pos_diff = np.array(
+                [
+                    self.fix_zero_drift(-self.joystick.get_axis(0)),
+                    self.fix_zero_drift(-self.joystick.get_axis(3)),
+                    self.fix_zero_drift(-self.joystick.get_axis(1)),
+                ]
+            )
+            self.rot_diff = np.array(
+                [
+                    (self.joystick.get_axis(4) - self.joystick.get_axis(5)) / 2,
+                    self.fix_zero_drift(-self.joystick.get_axis(2)),
+                    (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
+                ]
+            )
+        elif control_mode == "game":
+            self.pos_diff = np.array(
+                [
+                    self.fix_zero_drift(-self.joystick.get_axis(0)),
+                    (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
+                    self.fix_zero_drift(-self.joystick.get_axis(1)),
+                ]
+            )
+            self.rot_diff = np.array(
+                [
+                    self.fix_zero_drift(self.joystick.get_axis(3)),
+                    self.fix_zero_drift(-self.joystick.get_axis(2)),
+                    (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
+                ]
+            )
+        else:
+            raise ValueError("Invalid control mode")
 
     def __calc_position(self):
         self.pre_pos[self.current_pos] = self.pos[self.current_pos]
-        if self.MODE == "fpv":
+        if self.FLY_MODE == "fpv":
             rotation_matrix = R.from_euler(
                 "xyz", self.rot[self.current_pos]
             ).as_matrix()  # calculate rotation matrix
-        elif self.MODE == "drone":
+        elif self.FLY_MODE == "drone":
             rotation_matrix = R.from_euler(
                 "xyz", self.rot[self.current_pos] * np.array([0, 1, 0])
             ).as_matrix()
@@ -198,28 +263,19 @@ class Drone(Gamepad):
             self.t = time.perf_counter()
             self.pre_pos_diff = self.pos_diff
             self.pre_rot_diff = self.rot_diff
-            self.pos_diff = np.array(
-                [
-                    self.fix_zero_drift(-self.joystick.get_axis(0)),
-                    (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
-                    self.fix_zero_drift(-self.joystick.get_axis(1)),
-                ]
-            )
-            self.rot_diff = np.array(
-                [
-                    self.fix_zero_drift(self.joystick.get_axis(3)),
-                    self.fix_zero_drift(-self.joystick.get_axis(2)),
-                    (-self.joystick.get_axis(4) + self.joystick.get_axis(5)) / 2,
-                ]
-            )
+            self.__map_stick_data(self.CONTROL_MODE)
 
             # if self.ALT_MOVE_MODE:  # if alternative move mode
             #     self.pos_diff = np.multiply(self.pos_diff, ALT_SPEED_FILTER)
             #     self.rot_diff = np.multiply(self.rot_diff, ALT_ROT_FILTER)
 
             if self.LB_CONTROL_LAYER:
-                self.pos_diff *= np.array([1, 0, 1])
-                self.rot_diff *= np.array([0, 0, 1])
+                if self.CONTROL_MODE == "game":
+                    self.pos_diff *= np.array([1, 0, 1])
+                    self.rot_diff *= np.array([1, 1, 1])
+                else:
+                    self.pos_diff *= np.array([1, 1, 1])
+                    self.rot_diff *= np.array([0, 1, 1])
                 self.__calc_position()  # update position not update rotation
                 self.__calc_rotation()  # update rotation not update position
                 # calc zoom
