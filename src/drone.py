@@ -20,15 +20,20 @@ FOCUS_SPEED = 0.003 * config["focus_speed"]
 def constrain(x: float, min_value: float = 0, max_value: float = 1) -> float:
     return max(min_value, min(max_value, x))
 
+def normalize(v):
+    return v/np.linalg.norm(v)
+
 
 class Drone(Gamepad):
     def __init__(self):
         super().__init__()
         self.ENABLE = False
         self.MODE = config["mode"]  # "fpv" or "drone"
-        self.ALT_MOVE_MODE = False
         self.LB_CONTROL_LAYER = False
         self.RB_CONTROL_LAYER = False
+        # self.ALT_MOVE_MODE = False
+        self.FOCUS_DROPED = False
+        self.focus_pos = np.zeros(3)
         self.pos_diff = np.zeros(3)
         self.rot_diff = np.zeros(3)
         self.pre_pos_diff = np.zeros(3)
@@ -134,6 +139,19 @@ class Drone(Gamepad):
             self.rot[self.current_pos], 2 * np.pi
         )  # get dicimal part
 
+    def __rot_tract_to(obj_pos, obj_rot, focus_pos):
+        if (obj_pos == focus_pos).all():
+            return obj_rot
+        # Compute object-to-focus vector
+        focus_vector = focus_pos - obj_pos
+        yaw = np.arctan2(focus_vector[0], focus_vector[2])
+        # Compute pitch (rotation around X-axis)
+        pitch = np.arctan2(-focus_vector[1], np.sqrt(focus_vector[0]**2 + focus_vector[2]**2))
+        # Adjust the current rotation by the computed yaw and pitch
+        new_rot = np.array([pitch, yaw, 0])
+        new_rot = np.mod(new_rot+2*np.pi, 2*np.pi)
+        return new_rot
+    
     def reset(self):
         self.clear_pos_rot()
         self.zoom = 0.3
@@ -164,6 +182,14 @@ class Drone(Gamepad):
     def clear_pos_rot(self):
         self.clear_pos()
         self.clear_rot()
+
+    def drop_collect_focus(self):
+        if self.FOCUS_DROPED:
+            self.focus_pos = np.zeros(3)
+            self.FOCUS_DROPED = False
+        else:
+            self.focus_pos = self.pos[self.current_pos].copy()
+            self.FOCUS_DROPED = True
 
     def update(self):
         super().update()
@@ -244,3 +270,6 @@ class Drone(Gamepad):
                 self.rot_diff *= np.array([1, 1, 0])
                 self.__calc_position()  # update position
                 self.__calc_rotation()  # update rotation
+
+            if self.FOCUS_DROPED: # focus droped, recalculate rotation point to focus point
+                self.rot[self.current_pos] = self.__rot_tract_to(self.pos[self.current_pos], self.rot[self.current_pos], self.focus_pos)

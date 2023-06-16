@@ -33,7 +33,7 @@ if __name__ == "__main__":
         "6": [[vrcl.toggle_hud], []],  # back
         "7": [[vrcl.toggle_vr_mount], []],  # start
         "8": [[drone.clear_pos_rot, omini.reset], []],  # left stick
-        "9": [[], []],  # right stick
+        "9": [[drone.drop_collect_focus], []],  # right stick
         "10": [[vrcl.toggle_portrait], []],  # joyhat up
         "11": [
             [vrcl.toggle_hide_camera],
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         "6": [[vrcl.toggle_focus_peak], []],  # back
         "7": [[vrcl.toggle_avatar_focus], []],  # start
         "8": [[drone.clear_pos_rot, omini.reset], []],  # left stick
-        "9": [[], []],  # right stick
+        "9": [[drone.drop_collect_focus], []],  # right stick
         "10": [[], []],  # joyhat up
         "11": [[], []],  # joyhat down
         "12": [[], []],  # joyhat left
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         "6": [[], []],  # back
         "7": [[], []],  # start
         "8": [[drone.clear_pos_rot, omini.reset], []],  # left stick
-        "9": [[],[],],  # right stick
+        "9": [[drone.drop_collect_focus],[],],  # right stick
         "10": [[],[],],  # joyhat up
         "11": [[],[],],  # joyhat down
         "12": [[],[],],  # joyhat left
