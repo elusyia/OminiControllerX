@@ -7,68 +7,11 @@ import time
 import pygame
 import json
 
-
-""" 可调整的变量
-"""
-# SYSTEM_EVALUATION_CYCLE_TIME = 0.05  # The loop time of the whole system, do not change it unless you know what you are doing. It will also effect the sample speed of the system, which will make the camera move faster or slower.
-# RECORD_VOLUME = 10000
-# RECORDING = False
 config = json.load(open("src/config.json", "r"))
+# config = json.load(open("config.json", "r"))
 OSC_ADRESS = config["osc_adress"]
 OSC_PORT = config["osc_port"]
-TARGET_FPS = 60
-
-""" 录制
-"""
-
-# class RecordTape:
-#     volume = RECORD_VOLUME
-
-#     def __init__(self):
-#         self.rec_point = []
-
-#     def init_tape(self):
-#         self.rec_point = []
-
-#     def add_rec_point(self, pos, rot, t_diff):
-#         if len(self.rec_point) < self.volume:
-#             self.rec_point.append((pos, rot, t_diff))
-
-#     def replay(self, client: VRC_UAVCam_Client):
-#         for i in range(len(self.rec_point)):
-#             pos, rot, t_diff = self.rec_point[i]
-#             client.omini_sync_state(pos, rot)
-#             time.sleep(t_diff + 5 / 1000)
-
-
-# def start_record():
-#     global RECORDING
-#     global tape
-#     RECORDING = True
-#     tape.init_tape()
-#     print("start recording")
-
-
-# def stop_record():
-#     global RECORDING
-#     RECORDING = False
-#     print("stop recording")
-
-
-# def toggle_record():
-#     global RECORDING
-#     if RECORDING:
-#         stop_record()
-#     else:
-#         start_record()
-
-
-# def replay_record():
-#     global tape
-#     tape.replay(vrc_client)
-#     print("replay finished")
-
-# tape = RecordTape()
+TARGET_FPS = config["fps"]
 
 if __name__ == "__main__":
     """Get Instances"""
@@ -81,30 +24,30 @@ if __name__ == "__main__":
     """Button functions register map
     """
     button_func_map = {
-        "0": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # A
-        "1": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # B
-        "2": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # X
-        "3": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # Y
-        "4": [[drone.start_alt_control], [drone.stop_alt_control]],  # LB
-        "5": [[drone.staet_alt_move_mode], [drone.stop_alt_move_mode]],  # RB
-        "6": [[vrcl.toggle_hud], []],  # back
-        "7": [[vrcl.toggle_direct_cast], []],  # start
-        "8": [[drone.clear_pos_rot, omini.reset], []],  # left stick
-        "9": [[], []],  # right stick
-        "10": [[vrcl.toggle_portrait], []],  # joyhat up
-        "11": [
-            [drone.clear_pos_rot, omini.reset, omini.change_target],
-            [],
-        ],  # joyhat down
-        "12": [[], []],  # joyhat left
-        "13": [[], []],  # joyhat right
-    }
-    button_alt_func_map = {
         "0": [[drone.change_to_pos_0], []],  # A
         "1": [[drone.change_to_pos_1], []],  # B
         "2": [[drone.change_to_pos_2], []],  # X
         "3": [[drone.change_to_pos_3], []],  # Y
-        "4": [[drone.start_alt_control], [drone.stop_alt_control]],  # LB
+        "4": [[drone.start_lb_control], [drone.stop_lb_control]],  # LB
+        "5": [[drone.start_rb_control], [drone.stop_rb_control]],  # RB
+        "6": [[vrcl.toggle_hud], []],  # back
+        "7": [[vrcl.toggle_vr_mount], []],  # start
+        "8": [[drone.clear_pos_rot, omini.reset], []],  # left stick
+        "9": [[], []],  # right stick
+        "10": [[vrcl.toggle_portrait], []],  # joyhat up
+        "11": [
+            [vrcl.toggle_hide_camera],
+            [],
+        ],  # joyhat down
+        "12": [[vrcl.toggle_direct_cast], []],  # joyhat left
+        "13": [[vrcl.toggle_direct_cast], []],  # joyhat right
+    }
+    button_lb_func_map = {
+        "0": [[],[],],  # A
+        "1": [[],[],],  # B
+        "2": [[],[],],  # X
+        "3": [[],[],],  # Y
+        "4": [[drone.start_lb_control], [drone.stop_lb_control]],  # LB
         "5": [[], []],  # RB
         "6": [[vrcl.toggle_focus_peak], []],  # back
         "7": [[vrcl.toggle_avatar_focus], []],  # start
@@ -114,6 +57,22 @@ if __name__ == "__main__":
         "11": [[], []],  # joyhat down
         "12": [[], []],  # joyhat left
         "13": [[], []],  # joyhat right
+    }
+    button_rb_func_map = {
+        "0": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # A
+        "1": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # B
+        "2": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # X
+        "3": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # Y
+        "4": [[], []],  # LB
+        "5": [[drone.start_rb_control], [drone.stop_rb_control]],  # RB
+        "6": [[], []],  # back
+        "7": [[], []],  # start
+        "8": [[drone.clear_pos_rot, omini.reset], []],  # left stick
+        "9": [[],[],],  # right stick
+        "10": [[],[],],  # joyhat up
+        "11": [[],[],],  # joyhat down
+        "12": [[],[],],  # joyhat left
+        "13": [[],[],],  # joyhat right
     }
 
     """ Init
@@ -139,7 +98,9 @@ if __name__ == "__main__":
                         drone.joystick.rumble(0.4, 0.4, 800)
                         pygame.time.wait(800)
                         drone.joystick.rumble(0, 0, 0)
-                        omini.sync_state(drone.pos[drone.current_pos], drone.rot[drone.current_pos])
+                        omini.sync_state(
+                            drone.pos[drone.current_pos], drone.rot[drone.current_pos]
+                        )
                         drone.reset()
                         omini.reset()
                         drone.stop()
@@ -149,7 +110,9 @@ if __name__ == "__main__":
                         vrcl.sync_exposure(drone.exposure)
                     else:
                         drone.reset()
-                        omini.sync_state(drone.pos[drone.current_pos], drone.rot[drone.current_pos])
+                        omini.sync_state(
+                            drone.pos[drone.current_pos], drone.rot[drone.current_pos]
+                        )
                         omini.reset()
                         """Start Anima Here"""
                         vrcl.start()
@@ -176,20 +139,52 @@ if __name__ == "__main__":
 
         """ Key Event
         """
-        if drone.button_state["4"]:
+        if drone.button_state["4"]:  # LB control layer
             for button in drone.button_state:
                 if (
                     drone.button_state[button]
-                    and button_alt_func_map[button][0].__len__() > 0
+                    and button_lb_func_map[button][0].__len__() > 0
                 ):
-                    for func in button_alt_func_map[button][0]:
+                    for func in button_lb_func_map[button][0]:
                         func()
                 elif (
                     not drone.button_state[button]
-                    and button_alt_func_map[button][1].__len__() > 0
+                    and button_lb_func_map[button][1].__len__() > 0
                 ):
-                    for func in button_alt_func_map[button][1]:
+                    for func in button_lb_func_map[button][1]:
                         func()
+        elif drone.button_state["5"]:  # RB control layer
+            for button in drone.button_state:
+                if (
+                    drone.button_state[button]
+                    and button_rb_func_map[button][0].__len__() > 0
+                ):
+                    for func in button_rb_func_map[button][0]:
+                        if button == "0":
+                            func(config["up_button_parameter"], "a")
+                        elif button == "1":
+                            func(config["down_button_parameter"], "b")
+                        elif button == "2":
+                            func(config["left_button_parameter"], "x")
+                        elif button == "3":
+                            func(config["right_button_parameter"], "y")
+                        else:
+                            func()
+                elif (
+                    not drone.button_state[button]
+                    and button_rb_func_map[button][1].__len__() > 0
+                ):
+                    for func in button_rb_func_map[button][1]:
+                        if button == "0":
+                            func(config["up_button_parameter"], "a")
+                        elif button == "1":
+                            func(config["down_button_parameter"], "b")
+                        elif button == "2":
+                            func(config["left_button_parameter"], "x")
+                        elif button == "3":
+                            func(config["right_button_parameter"], "y")
+                        else:
+                            func()
         else:
             for button in drone.button_state:
                 if (
@@ -197,29 +192,11 @@ if __name__ == "__main__":
                     and button_func_map[button][0].__len__() > 0
                 ):
                     for func in button_func_map[button][0]:
-                        if button == "0":
-                            func(config["a_button_parameter"], "a")
-                        elif button == "1":
-                            func(config["b_button_parameter"], "b")
-                        elif button == "2":
-                            func(config["x_button_parameter"], "x")
-                        elif button == "3":
-                            func(config["y_button_parameter"], "y")
-                        else:
-                            func()
+                        func()
                 elif (
                     not drone.button_state[button]
                     and button_func_map[button][1].__len__() > 0
                 ):
                     for func in button_func_map[button][1]:
-                        if button == "0":
-                            func(config["a_button_parameter"], "a")
-                        elif button == "1":
-                            func(config["b_button_parameter"], "b")
-                        elif button == "2":
-                            func(config["x_button_parameter"], "x")
-                        elif button == "3":
-                            func(config["y_button_parameter"], "y")
-                        else:
-                            func()
+                        func()
         pygame.time.wait(1000 // TARGET_FPS - 1)

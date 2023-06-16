@@ -1,0 +1,21 @@
+{
+  "osc_adress": "127.0.0.1",
+  "osc_port": 9000,
+  "mode": "drone",
+  "normal_mov_speed": 1,
+  "normal_rot_speed": 1,
+  "alt_mov_speed": 0.3,
+  "alt_rot_speed": 1,
+  "zoom_speed": 1,
+  "exposure_speed": 1,
+  "aperture_speed": 1,
+  "focus_speed": 1,
+  "a_button_type": 0,
+  "b_button_type": 0,
+  "x_button_type": 0,
+  "y_button_type": 0,
+  "a_button_parameter": "None",
+  "b_button_parameter": "None",
+  "x_button_parameter": "None",
+  "y_button_parameter": "None"
+}

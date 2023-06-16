@@ -1,8 +1,9 @@
 import pygame
 import json
 
-SUPPORTED_GAMEPAD = ["Controller (Xbox One For Windows)"]
 config = json.load(open("src/config.json", "r"))
+# config = json.load(open("config.json", "r"))
+SUPPORTED_GAMEPAD = ["Controller (Xbox One For Windows)"]
 
 class Gamepad:
     def __init__(self):
@@ -49,20 +50,16 @@ class Gamepad:
             "13": False,  # joyhat right
         }
         self.button_type = {  # 0: key, 1: toggle, 2: push to activate
-            "0": config["a_button_type"],  # A
-            "1": config["b_button_type"],  # B
-            "2": config["x_button_type"],  # X
-            "3": config["y_button_type"],  # Y
+            "0": 2,  # A
+            "1": 2,  # B
+            "2": 2,  # X
+            "3": 2,  # Y
             "4": 2,  # LB
             "5": 2,  # RB
             "6": 0,  # back
             "7": 0,  # start
             "8": 0,  # left stick
             "9": 0,  # right stick
-            # "10": 0,  # joyhat up
-            # "11": 0,  # joyhat down
-            # "12": 0,  # joyhat left
-            # "13": 0,  # joyhat right
         }
 
     def fix_zero_drift(self, value):
@@ -79,7 +76,7 @@ class Gamepad:
             ):  # if button type is key then set state to False every time
                 self.button_state[button] = False
         # for joyhat, set state to False every time
-        if not self.button_state["4"]:
+        if not self.button_state["4"] and not self.button_state["5"]:
             self.button_state["10"] = False
             self.button_state["11"] = False
             self.button_state["12"] = False
@@ -134,14 +131,3 @@ class Gamepad:
                     self.button_state["11"] = False
                     self.button_state["12"] = False
                     self.button_state["13"] = False
-
-
-if __name__ == "__main__":
-    controller = Gamepad()
-    while True:
-        controller.update()
-        print(
-            controller,
-            end="     \r",
-        )
-        pygame.time.wait(16)  # 60Hz

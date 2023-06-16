@@ -52,6 +52,10 @@ class VRCLens:
         self.__feature(223)
         print("vrclens: toggled vr mount\n")
 
+    def toggle_hide_camera(self):
+        self.__feature(225)
+        print("vrclens: toggled hide camera\n")
+
     def sync_zoom(self, value: float):
         value = constrain(value)
         self.osc_client.send_message(
