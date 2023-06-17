@@ -1,4 +1,5 @@
 from driver.gamepad import Gamepad
+import pygame
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 import json
@@ -20,16 +21,20 @@ FOCUS_SPEED = 0.003 * config["focus_speed"]
 def constrain(x: float, min_value: float = 0, max_value: float = 1) -> float:
     return max(min_value, min(max_value, x))
 
+
 def normalize(v):
-    return v/np.linalg.norm(v)
+    return v / np.linalg.norm(v)
 
 
 class Drone(Gamepad):
+
     def __init__(self):
         super().__init__()
         self.ENABLE = False
         self.FLY_MODE = config["fly_mode"]  # "fpv" or "drone"
-        self.CONTROL_MODE = config["control_mode"]  # "game" or "japan" or "american" or "china"
+        self.CONTROL_MODE = config[
+            "control_mode"
+        ]  # "game" or "japan" or "american" or "china"
         self.LB_CONTROL_LAYER = False
         self.RB_CONTROL_LAYER = False
         # self.ALT_MOVE_MODE = False
@@ -56,20 +61,10 @@ class Drone(Gamepad):
         self.exposure = 0.5
         self.aperture = 0.17
         self.focus = 0.0
-
-    def __repr__(self):
-        return (
-            "State: "
-            + str(self.ENABLE)
-            + "Position: "
-            + str(self.pos)
-            + "Rotation: "
-            + str(self.rot)
-            + "Button: "
-            + str(self.button_state)
-            + "Time: "
-            + str(self.t)
-        )
+        self.TAPE_RECORDING = False
+        self.TAPE_PLAYING = False
+        self.tape = []
+        self.tape_iter = 0
 
     def start(self):
         self.ENABLE = True
@@ -110,8 +105,8 @@ class Drone(Gamepad):
 
     def is_alt_control(self):
         return self.LB_CONTROL_LAYER and self.RB_CONTROL_LAYER
-    
-    def __map_stick_data(self, control_mode:str):
+
+    def __map_stick_data(self, control_mode: str):
         if control_mode == "japan":
             self.pos_diff = np.array(
                 [
@@ -204,19 +199,21 @@ class Drone(Gamepad):
             self.rot[self.current_pos], 2 * np.pi
         )  # get dicimal part
 
-    def __rot_tract_to(obj_pos, obj_rot, focus_pos):
+    def __rot_tract_to(self, obj_pos, obj_rot, focus_pos):
         if (obj_pos == focus_pos).all():
             return obj_rot
         # Compute object-to-focus vector
         focus_vector = focus_pos - obj_pos
         yaw = np.arctan2(focus_vector[0], focus_vector[2])
         # Compute pitch (rotation around X-axis)
-        pitch = np.arctan2(-focus_vector[1], np.sqrt(focus_vector[0]**2 + focus_vector[2]**2))
+        pitch = np.arctan2(
+            -focus_vector[1], np.sqrt(focus_vector[0] ** 2 + focus_vector[2] ** 2)
+        )
         # Adjust the current rotation by the computed yaw and pitch
         new_rot = np.array([pitch, yaw, 0])
-        new_rot = np.mod(new_rot+2*np.pi, 2*np.pi)
+        new_rot = np.mod(new_rot + 2 * np.pi, 2 * np.pi)
         return new_rot
-    
+
     def reset(self):
         self.clear_pos_rot()
         self.zoom = 0.3
@@ -250,11 +247,101 @@ class Drone(Gamepad):
 
     def drop_collect_focus(self):
         if self.FOCUS_DROPED:
+            self.joystick.rumble(0.5, 0.5, 200)
+            pygame.time.wait(200)
             self.focus_pos = np.zeros(3)
             self.FOCUS_DROPED = False
         else:
+            self.joystick.rumble(0.5, 0.5, 200)
+            pygame.time.wait(200)
             self.focus_pos = self.pos[self.current_pos].copy()
             self.FOCUS_DROPED = True
+
+    def tape_toggle_record(self):
+        if self.TAPE_PLAYING:
+            print("Warnning: You are now playing! Play will be stoped")
+            self.TAPE_PLAYING = False
+        if self.TAPE_RECORDING:
+            self.joystick.rumble(0.5, 0.5, 500)
+            pygame.time.wait(500)
+            self.tape_iter = 0
+            self.TAPE_RECORDING = False
+            print("Drone: Tape record stoped")
+        else:
+            for i in range(3): # count down for 3 seconds
+                self.joystick.rumble(0, 0, 0)
+                pygame.time.wait(800)
+                self.joystick.rumble(0.8, 0.8, 200)
+                pygame.time.wait(200)
+            self.joystick.rumble(0, 0, 0)
+            pygame.time.wait(800)
+            self.tape = []
+            self.tape_iter = 0
+            self.TAPE_RECORDING = True
+            print("Drone: Tape record started")
+
+    def tape_toggle_play(self):
+        if self.TAPE_RECORDING:
+            print("Warnning: You are now recording! Record will be stoped")
+            self.TAPE_RECORDING = False
+        if self.TAPE_PLAYING:
+            self.joystick.rumble(0.5, 0.5, 500)
+            pygame.time.wait(500)
+            self.TAPE_PLAYING = False
+            print("Drone: Tape play stoped")
+        else:
+            for i in range(3): # count down for 3 seconds
+                self.joystick.rumble(0, 0, 0)
+                pygame.time.wait(800)
+                self.joystick.rumble(0.8, 0.8, 200)
+                pygame.time.wait(200)
+            self.joystick.rumble(0, 0, 0)
+            pygame.time.wait(800)
+            self.tape_iter = 0
+            self.TAPE_PLAYING = True
+            print("Drone: Tape play started")
+
+    def tape_reverse(self):
+        self.tape_iter = 0
+        self.tape.reverse()
+
+    def tape_jump_to_start(self):
+        self.tape_iter = 0
+        self.pos[self.current_pos] = self.tape[0][0]
+        self.rot[self.current_pos] = self.tape[0][1]
+        print("Drone: Tape jump to start")
+
+    def tape_jump_to_end(self):
+        self.tape_iter = len(self.tape) - 1
+        self.pos[self.current_pos] = self.tape[-1][0]
+        self.rot[self.current_pos] = self.tape[-1][1]
+        print("Drone: Tape jump to end")
+
+    def tape_next_frame(self) -> bool:
+        # if not the last frame
+        if self.tape_iter < len(self.tape) - 1:
+            self.tape_iter += 1
+            self.pos[self.current_pos] = self.tape[self.tape_iter][0]
+            self.rot[self.current_pos] = self.tape[self.tape_iter][1]
+            print("Drone: Playing frame {}, Tape remain {}".format(self.tape_iter, len(self.tape) - self.tape_iter))
+        if self.tape_iter == len(self.tape) - 1:
+            print("Drone: Tape reach the end")
+            self.joystick.rumble(0.5, 0.5, 100)
+            pygame.time.wait(100)
+            return True
+
+    def tape_previous_frame(self) -> bool:
+        # if not the first frame
+        if self.tape_iter > 0:
+            self.tape_iter -= 1
+            self.pos[self.current_pos] = self.tape[self.tape_iter][0]
+            self.rot[self.current_pos] = self.tape[self.tape_iter][1]
+            print("Drone: Playing frame {}, Tape remain {}".format(self.tape_iter, len(self.tape) - self.tape_iter))
+        if self.tape_iter == 0:
+            print("Drone: Tape reach the start")
+            self.joystick.rumble(0.5, 0.5, 100)
+            pygame.time.wait(100)
+            return True
 
     def update(self):
         super().update()
@@ -327,5 +414,22 @@ class Drone(Gamepad):
                 self.__calc_position()  # update position
                 self.__calc_rotation()  # update rotation
 
-            if self.FOCUS_DROPED: # focus droped, recalculate rotation point to focus point
-                self.rot[self.current_pos] = self.__rot_tract_to(self.pos[self.current_pos], self.rot[self.current_pos], self.focus_pos)
+            if self.TAPE_RECORDING:
+                self.tape.append(
+                    (self.pos[self.current_pos].copy(),
+                    self.rot[self.current_pos].copy())
+                )
+                print("Drone: Tape recording, frame: ", len(self.tape))
+            elif self.TAPE_PLAYING:
+                if self.tape_next_frame():
+                    self.TAPE_PLAYING = False
+                    print("Drone: Tape play stoped")
+
+            if (
+                self.FOCUS_DROPED
+            ):  # focus droped, recalculate rotation point to focus point
+                self.rot[self.current_pos] = self.__rot_tract_to(
+                    self.pos[self.current_pos],
+                    self.rot[self.current_pos],
+                    self.focus_pos,
+                )

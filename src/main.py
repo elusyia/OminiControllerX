@@ -43,10 +43,22 @@ if __name__ == "__main__":
         "13": [[vrcl.toggle_direct_cast], []],  # joyhat right
     }
     button_lb_func_map = {
-        "0": [[],[],],  # A
-        "1": [[],[],],  # B
-        "2": [[],[],],  # X
-        "3": [[],[],],  # Y
+        "0": [
+            [],
+            [],
+        ],  # A
+        "1": [
+            [],
+            [],
+        ],  # B
+        "2": [
+            [],
+            [],
+        ],  # X
+        "3": [
+            [],
+            [],
+        ],  # Y
         "4": [[drone.start_lb_control], [drone.stop_lb_control]],  # LB
         "5": [[], []],  # RB
         "6": [[vrcl.toggle_focus_peak], []],  # back
@@ -59,20 +71,47 @@ if __name__ == "__main__":
         "13": [[], []],  # joyhat right
     }
     button_rb_func_map = {
-        "0": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # A
-        "1": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # B
-        "2": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # X
-        "3": [[avatar.user_defined_parameter_on], [avatar.user_defined_parameter_off]],  # Y
+        "0": [
+            [avatar.user_defined_parameter_on],
+            [avatar.user_defined_parameter_off],
+        ],  # A
+        "1": [
+            [avatar.user_defined_parameter_on],
+            [avatar.user_defined_parameter_off],
+        ],  # B
+        "2": [
+            [avatar.user_defined_parameter_on],
+            [avatar.user_defined_parameter_off],
+        ],  # X
+        "3": [
+            [avatar.user_defined_parameter_on],
+            [avatar.user_defined_parameter_off],
+        ],  # Y
         "4": [[], []],  # LB
         "5": [[drone.start_rb_control], [drone.stop_rb_control]],  # RB
-        "6": [[], []],  # back
-        "7": [[], []],  # start
+        "6": [[drone.tape_toggle_record], []],  # back
+        "7": [[drone.tape_toggle_play], []],  # start
         "8": [[drone.clear_pos_rot, omini.reset], []],  # left stick
-        "9": [[drone.drop_collect_focus],[],],  # right stick
-        "10": [[],[],],  # joyhat up
-        "11": [[],[],],  # joyhat down
-        "12": [[],[],],  # joyhat left
-        "13": [[],[],],  # joyhat right
+        "9": [
+            [drone.drop_collect_focus],
+            [],
+        ],  # right stick
+        "10": [
+            [drone.tape_jump_to_start],
+            [],
+        ],  # joyhat up
+        "11": [
+            [drone.tape_jump_to_end],
+            [],
+        ],  # joyhat down
+        "12": [
+            [drone.tape_previous_frame],
+            [],
+        ],  # joyhat left
+        "13": [
+            [drone.tape_next_frame],
+            [],
+        ],  # joyhat right
     }
 
     """ Init
